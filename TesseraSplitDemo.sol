@@ -7,19 +7,25 @@ interface IERC20 {
 
 interface ITessera {
     function tesseraSwapWithAllowances(
-        address tokenIn, address tokenOut, int256 amountSpecified,
-        uint256 amountCheck, address recipient, bytes calldata swapData
+        address tokenIn,
+        address tokenOut,
+        int256 amountSpecified,
+        uint256 amountCheck,
+        address recipient,
+        bytes calldata swapData
     ) external;
 }
 
+/// @notice Execute a sell followed by split buys on a local Base fork.
+/// @dev Python funds this contract and reads Tessera's native swap events.
 contract TesseraSplitDemo {
     address constant WETH = 0x4200000000000000000000000000000000000006;
     address constant USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     address constant TESSERA = 0x55555522005BcAE1c2424D474BfD5ed477749E3e;
 
-    /// totalSell and totalBuy are WETH amounts in wei (18 decimals).
-    /// Sell once, then buy totalBuy through `pieces` exact-output swaps.
-    /// Python computes prices from Tessera's own swap events in the receipt.
+    /// @param totalSell WETH to sell first, in wei. Zero skips the sell.
+    /// @param totalBuy Total WETH to buy back, in wei.
+    /// @param pieces Number of exact-output swaps used to buy totalBuy.
     function run(uint256 totalSell, uint256 totalBuy, uint256 pieces) external {
         require(totalBuy > 0 && pieces > 0 && pieces <= totalBuy, "bad size");
         require(totalSell <= uint256(type(int256).max), "sell too large");
@@ -28,21 +34,33 @@ contract TesseraSplitDemo {
         require(IERC20(USDC).approve(TESSERA, type(uint256).max), "USDC approval");
 
         if (totalSell > 0) {
-            // Positive amountSpecified: exact input. Sell totalSell WETH.
-            ITessera(TESSERA).tesseraSwapWithAllowances(
-                WETH, USDC, int256(totalSell), 1, address(this), ""
-            );
+            // A positive amountSpecified means exact input: sell this much WETH.
+            ITessera(TESSERA).tesseraSwapWithAllowances({
+                tokenIn: WETH,
+                tokenOut: USDC,
+                amountSpecified: int256(totalSell),
+                amountCheck: 1, // Minimum USDC output, in raw token units.
+                recipient: address(this),
+                swapData: ""
+            });
         }
 
-        uint256 each = totalBuy / pieces;
-        uint256 remainder = totalBuy % pieces;
+        uint256 buySize = totalBuy / pieces;
+        uint256 leftoverWei = totalBuy % pieces;
+
         for (uint256 i; i < pieces; ++i) {
-            // Distribute leftover wei so the purchases sum to exactly totalBuy.
-            uint256 amount = each + (i < remainder ? 1 : 0);
-            // Negative amountSpecified: exact output. Buy `amount` WETH.
-            ITessera(TESSERA).tesseraSwapWithAllowances(
-                USDC, WETH, -int256(amount), type(uint256).max, address(this), ""
-            );
+            // Give the first few buys one extra wei when totalBuy is not divisible.
+            uint256 wethToBuy = buySize + (i < leftoverWei ? 1 : 0);
+
+            // A negative amountSpecified means exact output: receive this much WETH.
+            ITessera(TESSERA).tesseraSwapWithAllowances({
+                tokenIn: USDC,
+                tokenOut: WETH,
+                amountSpecified: -int256(wethToBuy),
+                amountCheck: type(uint256).max, // No USDC input cap in this demo.
+                recipient: address(this),
+                swapData: ""
+            });
         }
     }
 }
