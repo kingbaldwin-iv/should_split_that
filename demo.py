@@ -9,6 +9,8 @@
 
 Arguments: totalSell WETH, totalBuy WETH, pieces. The script compares one buy
 against `pieces` buys from the same snapshot; BOTH first sell totalSell WETH.
+Prices come from Tessera's native pool swap logs, including applied penalties
+and excluding gas. Solidity only executes the sell and the split purchases.
 Requires Anvil and solc 0.8.24+. Override paths with --anvil and --solc.
 Only the test contract's token balances and the test EOA's gas are funded.
 Historical Tessera configuration, helpers, custody and code are untouched.
@@ -35,7 +37,7 @@ POOL = '0xf524c1bc1c64a2c99bc7eccf19ede9a1d89d5a7c'
 IMPLEMENTATION = '0x6d9dd143e42b6338f4f6a7c0c26d124658f641cb'
 IMPL_SLOT = '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc'
 USER = '0x76fa817e2d5b93fa3c0d21bca4547161923ec876'
-TREASURY = '0x3dbe077e7986657e95e1cc50089f17a5a4af0aae'
+SWAP_TOPIC = '0x56441808e0dc590c63862fb3c0c914bff286fc67b3983cd294eb33e21cca326e'
 W, M = 10**18, 10**6
 
 
@@ -49,6 +51,36 @@ def words(*values):
 
 def calldata(signature, *values):
     return '0x' + hash_bytes(signature.encode())[:8] + words(*values)
+
+
+def tessera_swaps(receipt, pricing_account):
+    """Decode signed pool-side WETH/USDC deltas in execution order.
+
+    topics: signature, pricing account, int256 base delta, int256 quote delta.
+    data: base address, quote address, anchor tag, two pre-swap accumulators.
+    Positive means the pool receives that token; negative means it pays it out.
+    """
+    def signed(word):
+        value = int(word, 16)
+        return value - (1 << 256) if value >= (1 << 255) else value
+    swaps = []
+    logs = sorted(receipt['logs'], key=lambda log: int(log['logIndex'], 16))
+    for log in logs:
+        topics = log['topics']
+        if log['address'].lower() != POOL or not topics or topics[0] != SWAP_TOPIC:
+            continue
+        assert len(topics) == 4 and len(log['data']) == 2 + 5 * 64, 'unexpected Tessera event layout'
+        assert '0x' + topics[1][-40:].lower() == pricing_account.lower()
+        fields = [int(log['data'][i:i+64],16) for i in range(2,len(log['data']),64)]
+        assert fields[:2] == [int(WETH,16),int(USDC,16)], 'unexpected token pair'
+        base, quote = signed(topics[2]), signed(topics[3])
+        assert base * quote < 0, 'unexpected swap direction'
+        swaps.append((base,quote))
+    return swaps
+
+
+def execution_price(usdc_atoms, weth_atoms):
+    return Decimal(usdc_atoms) * W / (M * weth_atoms)
 
 
 def rpc(url, method, params=None):
@@ -163,48 +195,45 @@ def main():
             contract = deployed['contractAddress']
             assert contract and call('eth_getCode',[contract,'latest']) != '0x'
 
-            def balance(token, account=contract):
-                return int(call('eth_call',[{'to':token,'data':calldata('balanceOf(address)',account)},'latest']),16)
             # Fund only the newly deployed test contract. Verify the known token
-            # balance mappings with each original token's balanceOf getter.
+            # balance mappings once; execution prices do not use balances.
             for token,slot,amount in [(WETH,3,args.totalSell),(USDC,9,1_000_000*M)]:
                 key = '0x'+hash_bytes(bytes.fromhex(words(contract,slot)))
                 call('anvil_setStorageAt',[token,key,'0x'+words(amount)])
-                assert balance(token) == amount
+                assert int(call('eth_call',[{'to':token,'data':calldata('balanceOf(address)',contract)},'latest']),16) == amount
             assert pool_state() == original_state
-            initial_balances = {t:balance(t) for t in [WETH,USDC]}
-            initial_custody = {t:balance(t,TREASURY) for t in [WETH,USDC]}
             snapshot = call('evm_snapshot')
-            result_topic = '0x'+hash_bytes(b'Result(uint256,uint256,uint256,uint256,uint256,uint256)')
-            buy_topic = '0x'+hash_bytes(b'Buy(uint256,uint256,uint256)')
             print(f'Compiled and deployed {contract} on local fork of Base block {args.block:,}.', flush=True)
             print(f'Implementation: {IMPLEMENTATION}', flush=True)
-            print('Each scenario runs the sell and all buys in ONE transaction; prices exclude gas.\n',flush=True)
+            print('Each scenario runs the sell and all buys in ONE transaction. Prices use Tessera swap logs and exclude gas.\n',flush=True)
             results = []
             for pieces in dict.fromkeys([1,args.pieces]):
                 assert call('evm_revert',[snapshot]); snapshot = call('evm_snapshot')
                 assert pool_state() == original_state
                 receipt = mine_transaction({'to':contract,'data':calldata('run(uint256,uint256,uint256)',args.totalSell,args.totalBuy,pieces)},headers[1])
-                events = [l for l in receipt['logs'] if l['address'] == contract]
-                result_event = next(l for l in events if l['topics'][0] == result_topic)
-                values = [int(result_event['data'][i:i+64],16) for i in range(2,len(result_event['data']),64)]
-                sold, proceeds, bought, spent, sell_price, buy_price = values
-                assert (sold,bought) == (args.totalSell,args.totalBuy)
-                assert balance(WETH)-initial_balances[WETH] == bought-sold
-                assert balance(USDC)-initial_balances[USDC] == proceeds-spent
-                assert balance(WETH,TREASURY)-initial_custody[WETH] == sold-bought
-                assert balance(USDC,TREASURY)-initial_custody[USDC] == spent-proceeds
-                buys = [[int(l['data'][i:i+64],16) for i in range(2,len(l['data']),64)]
-                        for l in events if l['topics'][0] == buy_topic]
-                assert len(buys) == pieces and sum(b[1] for b in buys) == bought and sum(b[2] for b in buys) == spent
+                swaps = tessera_swaps(receipt,contract)
+                assert len(swaps) == pieces + int(args.totalSell > 0), 'unexpected swap count'
+                sold = proceeds = 0
+                if args.totalSell:
+                    sold, negative_proceeds = swaps.pop(0)
+                    assert sold == args.totalSell and negative_proceeds < 0
+                    proceeds = -negative_proceeds
+                buys = []
+                for i,(base,quote) in enumerate(swaps):
+                    expected = args.totalBuy // pieces + int(i < args.totalBuy % pieces)
+                    assert -base == expected and quote > 0, 'unexpected buy amount'
+                    buys.append((i,-base,quote))
+                bought = sum(b for _,b,_ in buys)
+                spent = sum(q for _,_,q in buys)
+                assert bought == args.totalBuy
                 if results: assert proceeds == results[0]['proceeds'], 'preparatory sell differed between strategies'
                 print(f'{pieces} buy swap(s):')
                 print(f'  Sell: {Decimal(sold)/W} WETH -> {Decimal(proceeds)/M:.6f} USDC')
-                print(f'  Sell execution price: {Decimal(sell_price)/W:.12f} USDC/WETH' if sold else '  Sell execution price: n/a (totalSell = 0)')
+                print(f'  Sell execution price: {execution_price(proceeds,sold):.12f} USDC/WETH' if sold else '  Sell execution price: n/a (totalSell = 0)')
                 for i,b,q in buys:
                     print(f'  Buy {i+1}: {Decimal(b)/W} WETH for {Decimal(q)/M:.6f} USDC')
                 print(f'  Total buy cost: {Decimal(spent)/M:.6f} USDC')
-                print(f'  Buy execution price: {Decimal(buy_price)/W:.12f} USDC/WETH')
+                print(f'  Buy execution price: {execution_price(spent,bought):.12f} USDC/WETH')
                 print(f'  Transaction gas used: {int(receipt["gasUsed"],16):,}\n',flush=True)
                 results.append({'pieces':pieces,'proceeds':proceeds,'spent':spent})
             if len(results)==2:
