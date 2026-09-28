@@ -1,0 +1,270 @@
+{
+  "block_number": 50710033,
+  "block_hash": "0x3c3ab3cdb5c47ab906d6c3a24ed7c99be82da5504e363a40572b5b16064350b7",
+  "tx_index": 0,
+  "addresses": {
+    "sender": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+    "helper": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+    "receiver": "0xa9e60a0b24a1847b6d1ea12ba0f429306f7ac2a5"
+  },
+  "funding": "101 ETH sender balance override; call sends and wraps 100 ETH, sells 100 WETH on Tessera, and buys back 80 WETH. No external funding swap or token storage overrides.",
+  "state_override_keys": {
+    "0xeaad1cf23b4f82850a27a87d525bd028a62b3278": [
+      "balance"
+    ],
+    "0x62f373a27e6c7529862cd91dd08932831f2138c2": [
+      "code"
+    ]
+  },
+  "scenarios": [
+    {
+      "name": "sell100_buy80_once",
+      "pieces": 1,
+      "error": null,
+      "revert_reason": null,
+      "call_frames": 46,
+      "gas_used": 1411515,
+      "tessera_swaps": [
+        {
+          "weth_pool_delta": "100",
+          "usdc_pool_delta": "-247178.815642",
+          "pricing_account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "pre_base_accumulator_atoms": "747117458585022290",
+          "pre_quote_accumulator_atoms": "0"
+        },
+        {
+          "weth_pool_delta": "-80",
+          "usdc_pool_delta": "197793.577879",
+          "pricing_account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "pre_base_accumulator_atoms": "100747117458585022290",
+          "pre_quote_accumulator_atoms": "0"
+        }
+      ],
+      "observed_manager_statuses": [
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        },
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        },
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        },
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        }
+      ],
+      "observed_address_helper_predicates": [
+        0,
+        0
+      ],
+      "sell_proceeds_usdc": "247178.815642",
+      "buy_cost_usdc": "197793.577879",
+      "average_buy_price_usdc_per_weth": "2472.4197234875",
+      "remaining_usdc_in_helper": "49385.237763",
+      "receiver_weth_from_transfers": "80"
+    },
+    {
+      "name": "sell100_buy80_in5",
+      "pieces": 5,
+      "error": null,
+      "revert_reason": null,
+      "call_frames": 126,
+      "gas_used": 3567664,
+      "tessera_swaps": [
+        {
+          "weth_pool_delta": "100",
+          "usdc_pool_delta": "-247178.815642",
+          "pricing_account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "pre_base_accumulator_atoms": "747117458585022290",
+          "pre_quote_accumulator_atoms": "0"
+        },
+        {
+          "weth_pool_delta": "-16",
+          "usdc_pool_delta": "39557.316577",
+          "pricing_account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "pre_base_accumulator_atoms": "100747117458585022290",
+          "pre_quote_accumulator_atoms": "0"
+        },
+        {
+          "weth_pool_delta": "-16",
+          "usdc_pool_delta": "39557.316577",
+          "pricing_account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "pre_base_accumulator_atoms": "100747117458585022290",
+          "pre_quote_accumulator_atoms": "39557316577"
+        },
+        {
+          "weth_pool_delta": "-16",
+          "usdc_pool_delta": "39557.316577",
+          "pricing_account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "pre_base_accumulator_atoms": "100747117458585022290",
+          "pre_quote_accumulator_atoms": "79114633154"
+        },
+        {
+          "weth_pool_delta": "-16",
+          "usdc_pool_delta": "39557.316577",
+          "pricing_account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "pre_base_accumulator_atoms": "100747117458585022290",
+          "pre_quote_accumulator_atoms": "118671949731"
+        },
+        {
+          "weth_pool_delta": "-16",
+          "usdc_pool_delta": "39557.316577",
+          "pricing_account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "pre_base_accumulator_atoms": "100747117458585022290",
+          "pre_quote_accumulator_atoms": "158229266308"
+        }
+      ],
+      "observed_manager_statuses": [
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        },
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        },
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        },
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        },
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        },
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        },
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        },
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        },
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        },
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        },
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        },
+        {
+          "account": "0x62f373a27e6c7529862cd91dd08932831f2138c2",
+          "status": 0
+        },
+        {
+          "account": "0xeaad1cf23b4f82850a27a87d525bd028a62b3278",
+          "status": 0
+        }
+      ],
+      "observed_address_helper_predicates": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "sell_proceeds_usdc": "247178.815642",
+      "buy_cost_usdc": "197786.582885",
+      "average_buy_price_usdc_per_weth": "2472.3322860625",
+      "remaining_usdc_in_helper": "49392.232757",
+      "receiver_weth_from_transfers": "80"
+    }
+  ],
+  "split_buy_saving_usdc_before_gas": "6.994994",
+  "verification": {
+    "both_calls_successful": true,
+    "same_state_and_block_options": true,
+    "fresh_accounts_historical_code_nonce_eth_weth_usdc_zero": true,
+    "current_account_proofs_empty_code_and_storage": true,
+    "historical_proofs_unavailable": "The RPC limits eth_getProof to recent blocks. Historical eth_getCode, eth_getTransactionCount, eth_getBalance, token balances and manager statuses were read at the parent block.",
+    "observed_manager_statuses_all_ordinary": true,
+    "observed_address_helper_predicates_all_false": true,
+    "receiver_received_exactly_80_weth_each": true,
+    "only_sender_eth_balance_and_helper_runtime_overridden": true,
+    "normal_weth_deposit_value_eth": "100",
+    "external_funding_swaps": 0,
+    "tessera_native_event_counts": [
+      2,
+      6
+    ]
+  },
+  "helper_runtime_sha256": "351b87f070a29439d11bb92b7dfd83c2f17947e2443bbeef1e7b30d436d11505"
+}

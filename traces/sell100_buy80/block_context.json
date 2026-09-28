@@ -1,0 +1,25 @@
+{
+  "header": {
+    "number": "0x305c611",
+    "hash": "0x3c3ab3cdb5c47ab906d6c3a24ed7c99be82da5504e363a40572b5b16064350b7",
+    "parentHash": "0x027d92e09004ac9005fe53a6b3f8c85df78c1e69f4f18883fc30554ffb84100d",
+    "timestamp": "0x6a95e905",
+    "miner": "0x4200000000000000000000000000000000000011",
+    "mixHash": "0x27d7b079dcd0376b2f6c6211f8b262083f6570123cb6977c0b1ccd7f00ca0730",
+    "gasLimit": "0x17d78400",
+    "baseFeePerGas": "0x4c4b40",
+    "excessBlobGas": "0x0"
+  },
+  "parent_header": {
+    "number": "0x305c610",
+    "hash": "0x027d92e09004ac9005fe53a6b3f8c85df78c1e69f4f18883fc30554ffb84100d",
+    "parentHash": "0xf2928665ab8645fc5499a619ae2eb5b04ca7457466a321c664c539692831a7bc",
+    "timestamp": "0x6a95e903",
+    "miner": "0x4200000000000000000000000000000000000011",
+    "mixHash": "0x27d7b079dcd0376b2f6c6211f8b262083f6570123cb6977c0b1ccd7f00ca0730",
+    "gasLimit": "0x17d78400",
+    "baseFeePerGas": "0x4c4b40",
+    "excessBlobGas": "0x0"
+  },
+  "rpc_client": "reth/v2.3.0-9384bc5/x86_64-unknown-linux-gnu/base/v1.2.0"
+}
